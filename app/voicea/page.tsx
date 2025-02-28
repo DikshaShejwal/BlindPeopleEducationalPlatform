@@ -4,18 +4,25 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
 
 export default function VoiceaPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ email: string; userType: string } | null>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false); // ✅ Fixed missing state
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
 
-    if (!storedUser) {
-      router.push("/login"); // Redirect if user is not logged in
-    } else {
-      setUser(storedUser);
+      if (!storedUser) {
+        router.push("/login"); // Redirect if user is not logged in
+      } else {
+        setUser(storedUser);
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
     }
   }, [router]);
 
@@ -72,6 +79,15 @@ export default function VoiceaPage() {
           </Button>
         </div>
       </div>
+
+      {/* Voice Assistant */}
+      {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
     </div>
   );
 }

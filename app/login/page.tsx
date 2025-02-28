@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false); // ✅ Added missing state
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,6 +82,14 @@ export default function LoginPage() {
           </Button>
         </form>
       </div>
+      {/* Voice Assistant */}
+      {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
     </div>
   );
 }

@@ -1,49 +1,48 @@
 const express = require("express");
-const multer = require("multer");
-const path = require("path");
 const Answer = require("../models/Answer");
+const Question = require("../models/Question");
 
 const router = express.Router();
 
-// Ensure 'uploads/' directory exists
-const uploadDir = path.join(__dirname, "../uploads");
-const fs = require("fs");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
-
-// Teacher uploads answer with audio
-router.post("/upload-answer", upload.single("audioFile"), async (req, res) => {
+/** 🎓 Student fetches their answered questions (Text + Audio) */
+router.get("/get-answers", async (req, res) => {
   try {
-    const { question, answer, studentEmail } = req.body;
+    const { studentEmail } = req.query;
 
-    if (!req.file) {
-      return res.status(400).json({ error: "Audio file is required" });
+    if (!studentEmail) {
+      return res.status(400).json({ message: "Student email is required" });
     }
 
-    const newAnswer = new Answer({
-      question,
-      answer,
-      studentEmail,
-      audioPath: req.file.path // Store the file path
-    });
+    // ✅ Fetch answers from Answer model
+    const textAnswers = await Answer.find({ studentEmail });
+    console.log("✅ Text Answers Found:", textAnswers);
 
-    await newAnswer.save();
-    res.status(201).json({ message: "Answer uploaded successfully", newAnswer });
+    // ✅ Fetch answers from Question model
+    const questionAnswers = await Question.find({
+      studentEmail,
+      answer: { $ne: "" }, // Only get answered questions
+    });
+    console.log("✅ Question Answers Found:", questionAnswers);
+
+    // Combine all answers into a consistent format
+    const allAnswers = [
+      ...textAnswers.map(a => ({
+        question: a.question,
+        answer: a.answer,
+        audioPath: a.audioPath
+      })),
+      ...questionAnswers.map(q => ({
+        question: q.question,
+        answer: q.answer,
+        audioPath: q.answerAudio
+      }))
+    ];
+
+    console.log("✅ Final Answers Sent to Student:", allAnswers);
+    res.json(allAnswers);
   } catch (error) {
-    console.error("Error uploading answer:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Error fetching answers:", error);
+    res.status(500).json({ message: "Error fetching answers" });
   }
 });
 

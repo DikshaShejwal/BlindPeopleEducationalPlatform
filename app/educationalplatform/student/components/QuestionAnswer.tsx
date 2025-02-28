@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic, X } from "lucide-react";
 
 export default function QuestionAnswer() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcribedText, setTranscribedText] = useState(""); // Speech-to-text output
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
-    // ✅ Initialize Speech Recognition on Component Mount
     if (typeof window !== "undefined") {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -87,7 +89,7 @@ export default function QuestionAnswer() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg shadow-md">
+    <div className="p-6 bg-gray-100 rounded-lg shadow-md h-auto max-h-[500px] overflow-auto">
       <h2 className="text-2xl font-bold text-purple-600 text-center mb-4">Ask a Question</h2>
 
       {/* ✅ Display Transcribed Text */}
@@ -98,11 +100,11 @@ export default function QuestionAnswer() {
       {/* ✅ Audio Recording Buttons */}
       <div className="flex gap-3 mt-4">
         {isRecording ? (
-          <Button onClick={stopRecording} className="bg-red-600 text-white">
+          <Button onClick={stopRecording} className="bg-red-600 text-white hover:bg-red-700">
             Stop Recording 🎤
           </Button>
         ) : (
-          <Button onClick={startRecording} className="bg-green-600 text-white">
+          <Button onClick={startRecording} className="bg-green-600 text-white hover:bg-green-700">
             Record Question 🎤
           </Button>
         )}
@@ -110,10 +112,30 @@ export default function QuestionAnswer() {
 
       {/* ✅ Submit Button */}
       <div className="flex gap-3 mt-4">
-        <Button onClick={sendQuestion} className="bg-blue-500 text-white">
+        <Button onClick={sendQuestion} className="bg-blue-500 text-white hover:bg-blue-600">
           📩 Submit Question
         </Button>
       </div>
+
+      {/* ✅ Voice Assistant */}
+      {isAssistantOpen && (
+        <div className="fixed bottom-16 right-4 bg-white shadow-lg rounded-lg p-4 max-w-sm">
+          <button
+            onClick={() => setIsAssistantOpen(false)}
+            className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />
+        </div>
+      )}
+
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-3 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-5 w-5" />
+      </button>
     </div>
   );
 }

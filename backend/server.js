@@ -1,46 +1,47 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const morgan = require("morgan");
 const connectDB = require("./config/db");
 
-const questionRoutes = require("./routes/questionRoutes");
-const authRoutes = require("./routes/authRoutes");
-const answerRoutes = require("./routes/answerRoutes");
-const videoRoutes = require("./routes/videoRoutes");
-
+// ✅ Load environment variables
 dotenv.config();
 
-// Connect to Database
-connectDB().then(() => console.log("✅ Database connected successfully")).catch(err => {
-  console.error("❌ Database connection failed:", err);
-  process.exit(1); // Exit if DB fails to connect
-});
+// ✅ Connect to MongoDB
+connectDB();
 
+// ✅ Initialize Express App
 const app = express();
 
-app.use(express.json());
-app.use(cors());
+// ✅ Middleware
+app.use(express.json()); // Parse JSON requests
+app.use(cors()); // Enable CORS
+app.use(morgan("dev")); // Log HTTP requests
 
-// Serve uploaded files (if needed)
-app.use("/uploads", express.static("uploads"));
+// ✅ Import Routes
+const authRoutes = require("./routes/authRoutes");
+const videoRoutes = require("./routes/videoRoutes");
+const questionRoutes = require("./routes/questionRoutes");
+const answerRoutes = require("./routes/answerRoutes");
+const quizRoutes = require("./routes/quizRoutes");
 
-// API Routes
-app.use("/api/questions", questionRoutes);
+// ✅ Register API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/videos", videoRoutes);
+app.use("/api/questions", questionRoutes);
 app.use("/api/answers", answerRoutes);
-app.use("/api/videos", videoRoutes); // ✅ Corrected route for videos
+app.use("/api/quizzes", quizRoutes);
 
-// 404 Route Not Found Middleware
-app.use((req, res, next) => {
-  res.status(404).json({ message: "❌ Route Not Found" });
+// ✅ Health Check Route
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ message: "✅ Server is running smoothly" });
 });
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err);
-  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+// ❌ 404 Middleware for Unmatched Routes
+app.use((req, res) => {
+  res.status(404).json({ message: `❌ Route Not Found: ${req.originalUrl}` });
 });
 
-// Start Server
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

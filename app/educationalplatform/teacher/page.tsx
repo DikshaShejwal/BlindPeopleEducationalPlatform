@@ -4,39 +4,37 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import UploadImage from "./components/UploadImage"; // ✅ Upload Image Component
-import UploadVideo from "./components/UploadVideo"; // ✅ Upload Video Component
-import TeacherResponse from "./components/TeacherResponse"; // ✅ Teacher Response Component
-import UploadQuiz from "./components/UploadQuiz"; // ✅ Upload Quiz Component
-import ViewMarks from "./components/ViewMarks"; // ✅ View Marks Component
-import ViewAssignment from "./components/ViewAssignment"; // ✅ View Assignments Component
+import UploadImage from "./components/UploadImage";
+import UploadVideo from "./components/UploadVideo";
+import TeacherResponse from "./components/TeacherResponse";
+import UploadQuiz from "./components/UploadQuiz";
+import ViewMarks from "./components/ViewMarks";
+import ViewAssignment from "./components/ViewAssignment";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
 
 export default function TeacherDashboard() {
   const [activeModal, setActiveModal] = useState<"image" | "video" | "response" | "quiz" | "marks" | "assignments" | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; userType: string } | null>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Retrieve logged-in user from localStorage
     const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
 
     if (!loggedInUser || loggedInUser.userType !== "teacher") {
-      router.push("/login"); // Redirect if not a teacher
+      router.push("/login");
     } else {
       setUser(loggedInUser);
     }
   }, [router]);
 
   const openModal = (type: "image" | "video" | "response" | "quiz" | "marks" | "assignments") => {
-    if (!isModalOpen) {
-      setActiveModal(type);
-    }
+    setActiveModal(type);
   };
 
   const closeModal = () => {
     setActiveModal(null);
-    setIsModalOpen(false);
   };
 
   const handleLogout = () => {
@@ -88,21 +86,19 @@ export default function TeacherDashboard() {
       {/* Modals */}
       <AnimatePresence>
         {activeModal && (
-           <motion.div
-           key="modal"
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           exit={{ opacity: 0 }}
-           className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md"
-         >
-           <motion.div
-             initial={{ opacity: 0, scale: 0.8 }}
-             animate={{ opacity: 1, scale: 1 }}
-             exit={{ opacity: 0, scale: 0.8 }}
-             className={`bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative ${
-               activeModal === "response" ? "max-h-[400px] overflow-auto" : "max-h-[90vh]"
-             }`}
-           >
+          <motion.div
+            key="modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative max-h-[90vh] overflow-auto"
+            >
               <h3 className="text-2xl font-bold text-purple-600 mb-4 text-center">
                 {activeModal === "image"
                   ? "Upload an Image"
@@ -122,7 +118,7 @@ export default function TeacherDashboard() {
               {activeModal === "response" && <TeacherResponse />}
               {activeModal === "quiz" && <UploadQuiz />}
               {activeModal === "marks" && <ViewMarks />}
-              {activeModal === "assignments" && <ViewAssignments />}
+              {activeModal === "assignments" && <ViewAssignment />}
 
               <div className="flex justify-center mt-4">
                 <Button className="bg-red-600 hover:bg-red-700" onClick={closeModal}>
@@ -133,6 +129,15 @@ export default function TeacherDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Voice Assistant */}
+      {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
     </div>
   );
 }

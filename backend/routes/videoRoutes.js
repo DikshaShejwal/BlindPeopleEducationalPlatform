@@ -1,84 +1,95 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs").promises; // Use async-friendly file system
-const Video = require("../models/Video");
+const fs = require("fs");
+const Video = require("../models/Video"); // ✅ Ensure correct model import
 
 const router = express.Router();
 
-// Ensure "uploads/videos" directory exists
+// ✅ Ensure 'uploads/videos' directory exists
 const uploadDir = path.join(__dirname, "../uploads/videos");
-require("fs").mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// ✅ Multer Configuration for Video Uploads
+// ✅ Multer storage configuration for video uploads
 const storage = multer.diskStorage({
-  destination: uploadDir,
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 const upload = multer({ storage });
 
-// ✅ Upload Video
-router.post("/upload-video", upload.single("video"), async (req, res) => {
+// ✅ Teacher uploads a video
+router.post("/upload-video", upload.single("videoFile"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "❌ No video uploaded" });
+    const { videoName, teacherEmail } = req.body;
 
-    const { teacherEmail } = req.body;
-    const newVideo = new Video({
-      teacherEmail,
-      videoUrl: `/uploads/videos/${req.file.filename}`,
-    });
-
-    await newVideo.save();
-    res.status(201).json({ message: "✅ Video uploaded successfully", videoUrl: newVideo.videoUrl });
-  } catch (error) {
-    console.error("❌ Error uploading video:", error);
-    res.status(500).json({ error: "❌ Internal Server Error" });
-  }
-});
-
-// ✅ Fetch All Videos
-router.get("/get-videos", async (req, res) => {
-  try {
-    const videos = await Video.find();
-    res.json(videos);
-  } catch (error) {
-    console.error("❌ Error fetching videos:", error);
-    res.status(500).json({ error: "❌ Internal Server Error" });
-  }
-});
-
-// ✅ Delete Video by ID
-router.delete("/delete-video/:id", async (req, res) => {
-  try {
-    const videoId = req.params.id;
-
-    // Find video in database
-    const video = await Video.findById(videoId);
-    if (!video) return res.status(404).json({ error: "❌ Video not found" });
-
-    // Delete video file from server
-    const videoPath = path.join(__dirname, "..", video.videoUrl);
-    try {
-      await fs.unlink(videoPath);
-      console.log(`🗑 Deleted video file: ${video.videoUrl}`);
-    } catch (err) {
-      console.warn(`⚠ Could not delete file: ${video.videoUrl} (File may not exist)`);
+    if (!teacherEmail) {
+      return res.status(400).json({ error: "Teacher email is required to upload videos." });
     }
 
-    // Delete from MongoDB
-    await Video.findByIdAndDelete(videoId);
-    console.log(`✅ Deleted video from database: ${videoId}`);
+    if (!req.file) {
+      return res.status(400).json({ error: "No video file uploaded." });
+    }
 
-    res.status(204).send(); // No content response
+    const videoUrl = `/uploads/videos/${req.file.filename}`;
+
+    const newVideo = new Video({ videoName, videoUrl, teacherEmail });
+    await newVideo.save();
+
+    res.status(201).json({ message: "✅ Video uploaded successfully!", videoUrl });
   } catch (error) {
-    console.error("❌ Error deleting video:", error);
-    res.status(500).json({ error: "❌ Internal Server Error" });
+    console.error("❌ Upload Error:", error);
+    res.status(500).json({ error: "Failed to upload video" });
   }
 });
 
-// ✅ Serve Video Files
+// ✅ Students fetch uploaded videos
+router.get("/get-videos", async (req, res) => {
+  try {
+    const videos = await Video.find({});
+    res.json(videos);
+  } catch (error) {
+    console.error("❌ Fetch Error:", error);
+    res.status(500).json({ error: "Failed to fetch videos" });
+  }
+});
+
+// ✅ Teacher deletes a video (only if they uploaded it)
+router.delete("/delete-video/:videoId", async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    const { teacherEmail } = req.body;
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({ error: "❌ Video not found" });
+    }
+
+    // Ensure only the teacher who uploaded it can delete
+    if (video.teacherEmail !== teacherEmail) {
+      return res.status(403).json({ error: "❌ Unauthorized to delete this video" });
+    }
+
+    // Remove video file from the server
+    const filePath = path.resolve(__dirname, "..", video.videoUrl);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // ✅ Delete the video file
+    }
+
+    await Video.findByIdAndDelete(videoId);
+    res.json({ message: "✅ Video deleted successfully!" });
+  } catch (error) {
+    console.error("❌ Error deleting video:", error);
+    res.status(500).json({ error: "Failed to delete video" });
+  }
+});
+
+// ✅ Serve video files statically
 router.use("/uploads/videos", express.static(uploadDir));
 
 module.exports = router;

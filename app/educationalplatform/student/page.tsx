@@ -4,16 +4,18 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import DescribeImage from "./components/DescribeImage";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
+import DescribeImage from "./components/BookReader";
 import VideoWithDescription from "./components/ViewVideo";
 import QuestionAnswer from "./components/QuestionAnswer";
-import StudentViewAnswer from "./components/StudentViewAnswer"; // ✅ Added Student View Answer Component
+import StudentViewAnswer from "./components/StudentViewAnswer";
 
 export default function StudentDashboard() {
   const [activeModal, setActiveModal] = useState<"image" | "video" | "tts" | "qa" | "viewAnswer" | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [user, setUser] = useState<{ email: string; userType: string } | null>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,14 +30,11 @@ export default function StudentDashboard() {
   }, [router]);
 
   const openModal = (type: "image" | "video" | "tts" | "qa" | "viewAnswer") => {
-    if (!isModalOpen) {
-      setActiveModal(type);
-    }
+    setActiveModal(type);
   };
 
   const closeModal = () => {
     setActiveModal(null);
-    setIsModalOpen(false);
     setTextInput("");
   };
 
@@ -53,7 +52,7 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-100 py-12 relative ${activeModal ? "overflow-hidden" : ""}`}>
+    <div className="min-h-screen bg-gray-100 py-12 relative">
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
@@ -70,22 +69,21 @@ export default function StudentDashboard() {
         {/* Feature Highlights */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            
-            { icon: "🎥", title: "Video Lecture", desc: "learn through video", action: () => openModal("video") },
-            { icon: "🔊", title: "BookReader", desc: "Convert text into spoken words", action: () => openModal("tts") },
+            { icon: "🎥", title: "Video Lecture", desc: "Learn through video", action: () => openModal("video") },
+            { icon: "🔊", title: "BookReader", desc: "Convert text into speech", action: () => openModal("tts") },
             { icon: "🤖", title: "Doubts", desc: "Ask and answer questions", action: () => openModal("qa") },
-            { icon: "📜", title: "View Answers", desc: "See answers from teachers", action: () => openModal("viewAnswer") }, // ✅ Added View Answer Option
+            { icon: "📜", title: "View Answers", desc: "See answers from teachers", action: () => openModal("viewAnswer") },
             {
               icon: "📖",
               title: "Assignment Writing",
-              desc: "convert speech to text",
-              action: () => router.push("/educationalplatform/student/book-and-speech"),
+              desc: "Convert speech to text",
+              action: () => router.push("/educationalplatform/student/components/SpeechWriting"),
             },
             {
               icon: "📝",
               title: "Quizzes",
               desc: "Take quizzes and explore",
-              action: () => router.push("/educationalplatform/student/quizzes-and-more"),
+              action: () => router.push("/educationalplatform/student/components/quizzes-and-more"),
             },
           ].map(({ icon, title, desc, action }, index) => (
             <motion.div
@@ -154,7 +152,7 @@ export default function StudentDashboard() {
                 </div>
               )}
               {activeModal === "qa" && <QuestionAnswer />}
-              {activeModal === "viewAnswer" && <StudentViewAnswer />} {/* ✅ Student Can View Answers */}
+              {activeModal === "viewAnswer" && <StudentViewAnswer />}
               <div className="flex justify-center mt-4">
                 <Button className="bg-red-600 hover:bg-red-700" onClick={closeModal}>
                   Close
@@ -164,6 +162,15 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Voice Assistant */}
+      {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
     </div>
   );
 }

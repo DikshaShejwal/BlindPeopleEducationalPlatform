@@ -8,10 +8,13 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
 
 export default function SignUpPage() {
   const router = useRouter();
   const [userType, setUserType] = useState("student");
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false); // Fix: Add missing state
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -167,6 +170,15 @@ export default function SignUpPage() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Voice Assistant Button */}
+      {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+      <button
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
     </div>
   );
 }

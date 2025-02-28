@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const Question = require("../models/Question");
+const Answer = require("../models/Answer"); // Import Answer model
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// 📩 Student asks a question (Text + Audio)
+/** 📩 Student asks a question (Text + Audio) */
 router.post("/ask-question", upload.single("audio"), async (req, res) => {
   try {
     const { studentEmail, question } = req.body;
@@ -18,28 +19,38 @@ router.post("/ask-question", upload.single("audio"), async (req, res) => {
       return res.status(400).json({ message: "Text or audio question is required" });
     }
 
-    const newQuestion = new Question({ studentEmail, question, audio, answer: "", answerAudio: "" });
+    const newQuestion = new Question({
+      studentEmail,
+      question,
+      audio,
+      answer: "",
+      answerAudio: "",
+    });
+
     await newQuestion.save();
+    console.log("✅ New Question Saved:", newQuestion);
 
     res.status(201).json({ message: "Question submitted successfully!" });
   } catch (error) {
-    console.error("Error submitting question:", error);
+    console.error("❌ Error submitting question:", error);
     res.status(500).json({ message: "Error submitting question" });
   }
 });
 
-// 📋 Teacher fetches unanswered questions (Text + Audio)
+/** 📋 Teacher fetches unanswered questions (Text + Audio) */
 router.get("/get-questions", async (req, res) => {
   try {
-    const questions = await Question.find({ answer: "" }, { answer: 0, answerAudio: 0 }); // Hide answers
+    const questions = await Question.find({ answer: "" }, { answer: 0, answerAudio: 0 });
+    console.log("✅ Unanswered Questions Fetched:", questions);
+
     res.json(questions);
   } catch (error) {
-    console.error("Error fetching questions:", error);
+    console.error("❌ Error fetching questions:", error);
     res.status(500).json({ message: "Error fetching questions" });
   }
 });
 
-// 📝 Teacher answers a question (Text + Audio)
+/** 📝 Teacher answers a question (Text + Audio) */
 router.post("/answer-question", upload.single("audio"), async (req, res) => {
   try {
     const { questionId, answer, teacherEmail } = req.body;
@@ -49,6 +60,7 @@ router.post("/answer-question", upload.single("audio"), async (req, res) => {
       return res.status(400).json({ message: "Text or audio answer is required" });
     }
 
+    // ✅ Update Question model with the answer
     const updatedQuestion = await Question.findByIdAndUpdate(
       questionId,
       { answer, answerAudio, teacherEmail },
@@ -59,28 +71,24 @@ router.post("/answer-question", upload.single("audio"), async (req, res) => {
       return res.status(404).json({ message: "Question not found" });
     }
 
-    res.json({ message: "Answer submitted successfully!" });
+    // ✅ Save answer in Answer model separately
+    const newAnswer = new Answer({
+      studentEmail: updatedQuestion.studentEmail,
+      question: updatedQuestion.question,
+      answer: answer || "",
+      audioPath: answerAudio ? `data:audio/webm;base64,${answerAudio}` : null,
+      teacherEmail,
+    });
+
+    await newAnswer.save();
+    console.log("✅ Answer saved:", newAnswer);
+
+    res.json({ message: "Answer submitted successfully!", answer: newAnswer });
   } catch (error) {
-    console.error("Error submitting answer:", error);
+    console.error("❌ Error submitting answer:", error);
     res.status(500).json({ message: "Error submitting answer" });
   }
 });
 
-// 🎓 Student fetches their answered questions (Text + Audio)
-router.get("/get-answers", async (req, res) => {
-  try {
-    const { studentEmail } = req.query;
-
-    if (!studentEmail) {
-      return res.status(400).json({ message: "Student email is required" });
-    }
-
-    const answers = await Question.find({ studentEmail, answer: { $ne: "" } });
-    res.json(answers);
-  } catch (error) {
-    console.error("Error fetching answers:", error);
-    res.status(500).json({ message: "Error fetching answers" });
-  }
-});
 
 module.exports = router;

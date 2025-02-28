@@ -4,16 +4,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
-import { Chatbot } from "@/components/Chatbot";
+import { VoiceAssistant } from "@/components/Chatbot";
+import { Mic } from "lucide-react";
 
 export default function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [highlightAuth, setHighlightAuth] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false); // <-- Added this line
 
   const handleTryNowClick = () => {
-    setHighlightAuth(true); // Activate highlight effect
-    setTimeout(() => setHighlightAuth(false), 3000); // Remove highlight after 3 seconds
+    setHighlightAuth(true);
+    setTimeout(() => setHighlightAuth(false), 3000);
   };
 
   return (
@@ -58,7 +59,7 @@ export default function HomePage() {
             >
               <h2 className="text-3xl font-bold mb-4">Netra AI</h2>
               <p className="text-gray-600 mb-6">
-                Netra AI is an AI-powered solution aimed at helping visually impaired individuals 
+              Netra AI is an AI-powered solution aimed at helping visually impaired individuals 
                 perceive the world around them. It uses on-device AI processing with ESP32 for offline 
                 recognition and integrates cloud APIs for complex tasks like real-time object and scene 
                 interpretation. Key features include facial recognition for personalized interactions, 
@@ -80,7 +81,7 @@ export default function HomePage() {
             >
               <h2 className="text-3xl font-bold mb-4">Voicea</h2>
               <p className="text-gray-600 mb-6">
-                Voicea focuses on revolutionizing inclusive digital learning for specially-abled individuals. 
+              Voicea focuses on revolutionizing inclusive digital learning for specially-abled individuals. 
                 It provides real-time, AI-driven solutions for accessible education through sound-based feedback 
                 and community interaction. The platform offers tools like personalized learning resources, a 
                 discussion forum for collaborative learning, and multi-sensory engagement using haptic feedback. 
@@ -93,18 +94,15 @@ export default function HomePage() {
             </motion.div>
           </div>
         </div>
-
-        {/* Chatbot */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            size="icon"
-            className="h-12 w-12 rounded-full bg-purple-600 hover:bg-purple-700 shadow-lg"
-            onClick={() => setIsChatOpen(!isChatOpen)}
-          >
-            <MessageSquare className="h-6 w-6" />
-          </Button>
-          {isChatOpen && <Chatbot onClose={() => setIsChatOpen(false)} />}
-        </div>
+       
+       {/* Voice Assistant */}
+       {isAssistantOpen && <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />}
+        <button
+          onClick={() => setIsAssistantOpen(true)}
+          className="fixed bottom-4 right-4 p-4 bg-purple-600 text-white rounded-full shadow-lg"
+        >
+          <Mic className="h-6 w-6" />
+        </button>
       </main>
     </div>
   );
